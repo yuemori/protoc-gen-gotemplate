@@ -29,9 +29,6 @@ func main() {
 	// point to the file that defines them.
 	g.WrapTypes()
 
-	g.SetPackageNames()
-	g.BuildTypeNameMap()
-
 	g.GenerateAllFiles()
 
 	// Send back the results.

@@ -1,92 +1,108 @@
 package generator
 
 import (
-	pbgen "github.com/golang/protobuf/protoc-gen-go/generator"
+	"bytes"
+	"github.com/golang/protobuf/protoc-gen-go/descriptor"
+	gen "github.com/golang/protobuf/protoc-gen-go/generator"
+	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"log"
+	"strings"
+	"text/template"
 )
 
 type Generator struct {
-	*pbgen.Generator
-	packageName      string                     // What we're calling ourselves.
-	allFiles         []*FileDescriptor          // All files in the tree
-	allFilesByName   map[string]*FileDescriptor // All files by filename.
-	genFiles         []*FileDescriptor          // Those files we will generate output for.
-	file             *FileDescriptor            // The file we are compiling now.
-	usedPackages     map[string]bool            // Names of packages used in current file.
-	typeNameToObject map[string]Object          // Key is a fully-qualified name in input syntax.
-	init             []string                   // Lines to emit in the init function.
-	indent           string
-	writeOutput      bool
+	*bytes.Buffer
+	gen.Generator
+	templatePaths  []string
+	genFiles       []*gen.FileDescriptor          // Those files we will generate output for.
+	allFiles       []*gen.FileDescriptor          // All files in the tree
+	allFilesByName map[string]*gen.FileDescriptor // All files by filename.
+}
+
+type Service struct {
+	Name        string
+	PackageName string
+	Methods     []*descriptor.MethodDescriptorProto
 }
 
 func New() *Generator {
 	g := new(Generator)
+	g.Buffer = new(bytes.Buffer)
+	g.Request = new(plugin.CodeGeneratorRequest)
+	g.Response = new(plugin.CodeGeneratorResponse)
 	return g
 }
 
-func (g *Generator) generate(file *pbgen.FileDescriptor) {
-	g.file = g.FileOf(file.FileDescriptorProto)
-	g.usedPackages = make(map[string]bool)
+func (g *Generator) GenerateAllFiles() {
+	services := make([]*Service, 0, len(g.allFiles))
 
-	if g.file.index == 0 {
-		// For one file in the package, assert version compatibility.
-		g.P("// This is a compile-time assertion to ensure that this generated file")
-		g.P("// is compatible with the proto package it is being compiled against.")
-		g.P("// A compilation error at this line likely means your copy of the")
-		g.P("// proto package needs to be updated.")
-		g.P("const _ = ", g.Pkg["proto"], ".ProtoPackageIsVersion", generatedCodeVersion, " // please upgrade the proto package")
-		g.P()
-	}
-	for _, td := range g.file.imp {
-		g.generateImported(td)
-	}
-	for _, enum := range g.file.enum {
-		g.generateEnum(enum)
-	}
-	for _, desc := range g.file.desc {
-		// Don't generate virtual messages for maps.
-		if desc.GetOptions().GetMapEntry() {
-			continue
+	for _, file := range g.allFiles {
+		fdp := file.FileDescriptorProto
+		for _, sv := range fdp.Service {
+			service := &Service{
+				Name:        sv.GetName(),
+				PackageName: file.GetPackage(),
+				Methods:     sv.Method}
+			services = append(services, service)
 		}
-		g.generateMessage(desc)
-	}
-	for _, ext := range g.file.ext {
-		g.generateExtension(ext)
-	}
-	g.generateInitFunction()
-
-	// Run the plugins before the imports so we know which imports are necessary.
-	g.runPlugins(file)
-
-	g.generateFileDescriptor(file)
-
-	// Generate header and imports last, though they appear first in the output.
-	rem := g.Buffer
-	g.Buffer = new(bytes.Buffer)
-	g.generateHeader()
-	g.generateImports()
-	if !g.writeOutput {
-		return
-	}
-	g.Write(rem.Bytes())
-
-	// Reformat generated code.
-	fset := token.NewFileSet()
-	raw := g.Bytes()
-	ast, err := parser.ParseFile(fset, "", g, parser.ParseComments)
-	if err != nil {
-		// Print out the bad code with line numbers.
-		// This should never happen in practice, but it can while changing generated code,
-		// so consider this a debugging aid.
-		var src bytes.Buffer
-		s := bufio.NewScanner(bytes.NewReader(raw))
-		for line := 1; s.Scan(); line++ {
-			fmt.Fprintf(&src, "%5d\t%s\n", line, s.Bytes())
-		}
-		g.Fail("bad Go source code was generated:", err.Error(), "\n"+src.String())
 	}
 	g.Reset()
-	err = (&printer.Config{Mode: printer.TabIndent | printer.UseSpaces, Tabwidth: 8}).Fprint(g, fset, ast)
-	if err != nil {
-		g.Fail("generated Go source code could not be reformatted:", err.Error())
+	g.generate(services)
+}
+
+func (g *Generator) generate(services []*Service) {
+	g.Buffer = new(bytes.Buffer)
+	rem := g.Buffer
+	g.execTemplate(services)
+	g.Write(rem.Bytes())
+	g.Reset()
+}
+
+func String(v string) *string {
+	return &v
+}
+
+func (g *Generator) execTemplate(services []*Service) {
+	for _, path := range g.templatePaths {
+		tpl := template.Must(template.ParseFiles(path))
+		if err := tpl.Execute(g.Buffer, services); err != nil {
+			g.Error(err)
+		}
+
+		g.Response.File = append(g.Response.File, &plugin.CodeGeneratorResponse_File{
+			Name:    String(strings.Replace(tpl.Name(), ".tmpl", "", 1)),
+			Content: String(g.String()),
+		})
+	}
+}
+
+func (g *Generator) CommandLineParameters(parameter string) {
+	paths := strings.Split(parameter, ",")
+	g.templatePaths = make([]string, 0, len(paths))
+	for _, p := range paths {
+		log.Print(p)
+		g.templatePaths = append(g.templatePaths, p)
+	}
+}
+
+func (g *Generator) WrapTypes() {
+	g.allFiles = make([]*gen.FileDescriptor, 0, len(g.Request.ProtoFile))
+	g.allFilesByName = make(map[string]*gen.FileDescriptor, len(g.allFiles))
+	for _, f := range g.Request.ProtoFile {
+		// We must wrap the descriptors before we wrap the enums
+		fd := &gen.FileDescriptor{
+			FileDescriptorProto: f,
+		}
+		g.allFiles = append(g.allFiles, fd)
+		g.allFilesByName[f.GetName()] = fd
+	}
+
+	g.genFiles = make([]*gen.FileDescriptor, 0, len(g.Request.FileToGenerate))
+	for _, fileName := range g.Request.FileToGenerate {
+		fd := g.allFilesByName[fileName]
+		if fd == nil {
+			g.Fail("could not find file named", fileName)
+		}
+		g.genFiles = append(g.genFiles, fd)
 	}
 }

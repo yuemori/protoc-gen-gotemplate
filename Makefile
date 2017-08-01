@@ -1,7 +1,7 @@
 .PHONY: glide deps clean
 
 NAME := protoc-gen-gotemplate
-SRCS := $(shell find app -type d -name 'vendor' -prune -o -type f -name '*.go')
+SRCS := $(shell find . -type d -name 'vendor' -prune -o -type f -name '*.go')
 export GO15VENDOREXPERIMENT=1
 
 bin/$(NAME): $(SRCS)
