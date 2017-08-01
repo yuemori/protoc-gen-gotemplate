@@ -1,4 +1,4 @@
-package: .
+package: github.com/yuemori/protoc-gen-gotemplate
 import:
 - package: github.com/golang/protobuf
   subpackages:

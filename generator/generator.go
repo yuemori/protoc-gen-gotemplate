@@ -5,8 +5,10 @@ import (
 	"github.com/Masterminds/sprig"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
+	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -57,13 +59,19 @@ func String(v string) *string {
 
 func (g *Generator) execTemplate(files []*descriptor.FileDescriptorProto) {
 	for _, path := range g.templatePaths {
-		tpl := template.Must(template.ParseFiles(path))
-		if err := tpl.Funcs(sprig.FuncMap()).Execute(g.Buffer, files); err != nil {
+		tplName := strings.Replace(filepath.Base(path), ".tmpl", "", 1)
+		b, err := ioutil.ReadFile(path)
+		if err != nil {
+			g.Error(err)
+		}
+		s := string(b)
+		tpl := template.Must(template.New(tplName).Funcs(sprig.TxtFuncMap()).Parse(s))
+		if err := tpl.Execute(g.Buffer, files); err != nil {
 			g.Error(err)
 		}
 
 		g.Response.File = append(g.Response.File, &plugin.CodeGeneratorResponse_File{
-			Name:    String(strings.Replace(tpl.Name(), ".tmpl", "", 1)),
+			Name:    String(tplName),
 			Content: String(g.String()),
 		})
 	}

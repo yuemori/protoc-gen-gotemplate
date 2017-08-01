@@ -1,5 +1,5 @@
-hash: 46638e73015cc4960bb4b1e863e9ce3531398749167146a59aa45494ee5274e9
-updated: 2017-08-02T02:27:58.432279798+09:00
+hash: 2586c704502e6db3764831c8f75c616e4a3c44fe50dd343b81f088c323f78257
+updated: 2017-08-02T02:59:31.452422764+09:00
 imports:
 - name: github.com/aokoli/goutils
   version: 3391d3790d23d03408670993e957e8f408993c34
@@ -20,10 +20,6 @@ imports:
   version: e039e20e500c2c025d9145be375e27cf42a94174
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
-- name: github.com/yuemori/protoc-gen-gotemplate
-  version: 8ecc951af61913628aa919abc564a1b9cac5b5e2
-  subpackages:
-  - generator
 - name: golang.org/x/crypto
   version: 558b6879de74bc843225cde5686419267ff707ca
   subpackages:

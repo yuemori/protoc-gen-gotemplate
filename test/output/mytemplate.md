@@ -1,7 +1,7 @@
 # TemplateTest
 
 
-## extension_base.proto
+## EXTENSION_BASE.PROTO
 
 - Package: extension_base
 
@@ -19,7 +19,7 @@
 
 
 
-## extension_extra.proto
+## EXTENSION_EXTRA.PROTO
 
 - Package: extension_extra
 
@@ -36,7 +36,7 @@
 
 
 
-## extension_user.proto
+## EXTENSION_USER.PROTO
 
 - Package: extension_user
 
@@ -58,7 +58,7 @@
 
 
 
-## grpc.proto
+## GRPC.PROTO
 
 - Package: grpc.testing
 
@@ -79,7 +79,7 @@
 - Test
 
 
-## imp2.proto
+## IMP2.PROTO
 
 - Package: imp
 
@@ -97,7 +97,7 @@
 
 
 
-## imp3.proto
+## IMP3.PROTO
 
 - Package: imp
 
@@ -114,7 +114,7 @@
 
 
 
-## imp.proto
+## IMP.PROTO
 
 - Package: imp
 
@@ -133,7 +133,7 @@
 
 
 
-## multi/multi2.proto
+## MULTI/MULTI2.PROTO
 
 - Package: multitest
 
@@ -150,7 +150,7 @@
 
 
 
-## multi/multi3.proto
+## MULTI/MULTI3.PROTO
 
 - Package: multitest
 
@@ -167,7 +167,7 @@
 
 
 
-## multi/multi1.proto
+## MULTI/MULTI1.PROTO
 
 - Package: multitest
 
@@ -184,7 +184,7 @@
 
 
 
-## proto3.proto
+## PROTO3.PROTO
 
 - Package: proto3
 
@@ -202,7 +202,7 @@
 
 
 
-## test.proto
+## TEST.PROTO
 
 - Package: my.test
 
