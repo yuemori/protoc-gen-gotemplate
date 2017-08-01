@@ -25,10 +25,6 @@ func main() {
 
 	g.CommandLineParameters(g.Request.GetParameter())
 
-	// Create a wrapped version of the Descriptors and EnumDescriptors that
-	// point to the file that defines them.
-	g.WrapTypes()
-
 	g.GenerateAllFiles()
 
 	// Send back the results.

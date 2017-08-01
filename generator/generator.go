@@ -12,11 +12,9 @@ import (
 
 type Generator struct {
 	*bytes.Buffer
-	templatePaths  []string
-	allFiles       []*descriptor.FileDescriptorProto          // All files in the tree
-	allFilesByName map[string]*descriptor.FileDescriptorProto // All files by filename.
-	Request        *plugin.CodeGeneratorRequest               // The input.
-	Response       *plugin.CodeGeneratorResponse              // The output.
+	templatePaths []string
+	Request       *plugin.CodeGeneratorRequest  // The input.
+	Response      *plugin.CodeGeneratorResponse // The output.
 }
 
 type Service struct {
@@ -35,7 +33,13 @@ func New() *Generator {
 
 func (g *Generator) GenerateAllFiles() {
 	g.Reset()
-	g.generate(g.allFiles)
+
+	allFiles := make([]*descriptor.FileDescriptorProto, 0, len(g.Request.ProtoFile))
+	for _, f := range g.Request.ProtoFile {
+		allFiles = append(allFiles, f)
+	}
+
+	g.generate(allFiles)
 }
 
 func (g *Generator) generate(files []*descriptor.FileDescriptorProto) {
@@ -72,23 +76,12 @@ func (g *Generator) CommandLineParameters(parameter string) {
 	}
 }
 
-func (g *Generator) WrapTypes() {
-	g.allFiles = make([]*descriptor.FileDescriptorProto, 0, len(g.Request.ProtoFile))
-	g.allFilesByName = make(map[string]*descriptor.FileDescriptorProto, len(g.allFiles))
-	for _, f := range g.Request.ProtoFile {
-		// We must wrap the descriptors before we wrap the enums
-		g.allFiles = append(g.allFiles, f)
-		g.allFilesByName[f.GetName()] = f
-	}
-}
-
 func (g *Generator) Error(err error, msgs ...string) {
 	s := strings.Join(msgs, " ") + ":" + err.Error()
 	log.Print("protoc-gen-go: error:", s)
 	os.Exit(1)
 }
 
-// Fail reports a problem and exits the program.
 func (g *Generator) Fail(msgs ...string) {
 	s := strings.Join(msgs, " ")
 	log.Print("protoc-gen-go: error:", s)

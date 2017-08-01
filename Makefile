@@ -1,4 +1,4 @@
-.PHONY: glide deps clean
+.PHONY: glide deps clean test
 
 NAME := protoc-gen-gotemplate
 SRCS := $(shell find . -type d -name 'vendor' -prune -o -type f -name '*.go')
@@ -6,6 +6,9 @@ export GO15VENDOREXPERIMENT=1
 
 bin/$(NAME): $(SRCS)
 	go build -o $(CURDIR)/bin/$(NAME) main.go
+
+test:
+	make -C test
 
 clean:
 	rm -rf bin/*
