@@ -2,9 +2,9 @@ package main
 
 import (
 	"github.com/golang/protobuf/proto"
+	"github.com/yuemori/protoc-gen-gotemplate/generator"
 	"io/ioutil"
 	"os"
-	"ryakcell/protoc-csharp-plugin/generator"
 )
 
 func main() {
