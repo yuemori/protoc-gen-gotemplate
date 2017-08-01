@@ -3,20 +3,20 @@ package generator
 import (
 	"bytes"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
-	gen "github.com/golang/protobuf/protoc-gen-go/generator"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"log"
+	"os"
 	"strings"
 	"text/template"
 )
 
 type Generator struct {
 	*bytes.Buffer
-	gen.Generator
 	templatePaths  []string
-	genFiles       []*gen.FileDescriptor          // Those files we will generate output for.
-	allFiles       []*gen.FileDescriptor          // All files in the tree
-	allFilesByName map[string]*gen.FileDescriptor // All files by filename.
+	allFiles       []*descriptor.FileDescriptorProto          // All files in the tree
+	allFilesByName map[string]*descriptor.FileDescriptorProto // All files by filename.
+	Request        *plugin.CodeGeneratorRequest               // The input.
+	Response       *plugin.CodeGeneratorResponse              // The output.
 }
 
 type Service struct {
@@ -34,26 +34,14 @@ func New() *Generator {
 }
 
 func (g *Generator) GenerateAllFiles() {
-	services := make([]*Service, 0, len(g.allFiles))
-
-	for _, file := range g.allFiles {
-		fdp := file.FileDescriptorProto
-		for _, sv := range fdp.Service {
-			service := &Service{
-				Name:        sv.GetName(),
-				PackageName: file.GetPackage(),
-				Methods:     sv.Method}
-			services = append(services, service)
-		}
-	}
 	g.Reset()
-	g.generate(services)
+	g.generate(g.allFiles)
 }
 
-func (g *Generator) generate(services []*Service) {
+func (g *Generator) generate(files []*descriptor.FileDescriptorProto) {
 	g.Buffer = new(bytes.Buffer)
 	rem := g.Buffer
-	g.execTemplate(services)
+	g.execTemplate(files)
 	g.Write(rem.Bytes())
 	g.Reset()
 }
@@ -62,10 +50,10 @@ func String(v string) *string {
 	return &v
 }
 
-func (g *Generator) execTemplate(services []*Service) {
+func (g *Generator) execTemplate(files []*descriptor.FileDescriptorProto) {
 	for _, path := range g.templatePaths {
 		tpl := template.Must(template.ParseFiles(path))
-		if err := tpl.Execute(g.Buffer, services); err != nil {
+		if err := tpl.Execute(g.Buffer, files); err != nil {
 			g.Error(err)
 		}
 
@@ -80,29 +68,29 @@ func (g *Generator) CommandLineParameters(parameter string) {
 	paths := strings.Split(parameter, ",")
 	g.templatePaths = make([]string, 0, len(paths))
 	for _, p := range paths {
-		log.Print(p)
 		g.templatePaths = append(g.templatePaths, p)
 	}
 }
 
 func (g *Generator) WrapTypes() {
-	g.allFiles = make([]*gen.FileDescriptor, 0, len(g.Request.ProtoFile))
-	g.allFilesByName = make(map[string]*gen.FileDescriptor, len(g.allFiles))
+	g.allFiles = make([]*descriptor.FileDescriptorProto, 0, len(g.Request.ProtoFile))
+	g.allFilesByName = make(map[string]*descriptor.FileDescriptorProto, len(g.allFiles))
 	for _, f := range g.Request.ProtoFile {
 		// We must wrap the descriptors before we wrap the enums
-		fd := &gen.FileDescriptor{
-			FileDescriptorProto: f,
-		}
-		g.allFiles = append(g.allFiles, fd)
-		g.allFilesByName[f.GetName()] = fd
+		g.allFiles = append(g.allFiles, f)
+		g.allFilesByName[f.GetName()] = f
 	}
+}
 
-	g.genFiles = make([]*gen.FileDescriptor, 0, len(g.Request.FileToGenerate))
-	for _, fileName := range g.Request.FileToGenerate {
-		fd := g.allFilesByName[fileName]
-		if fd == nil {
-			g.Fail("could not find file named", fileName)
-		}
-		g.genFiles = append(g.genFiles, fd)
-	}
+func (g *Generator) Error(err error, msgs ...string) {
+	s := strings.Join(msgs, " ") + ":" + err.Error()
+	log.Print("protoc-gen-go: error:", s)
+	os.Exit(1)
+}
+
+// Fail reports a problem and exits the program.
+func (g *Generator) Fail(msgs ...string) {
+	s := strings.Join(msgs, " ")
+	log.Print("protoc-gen-go: error:", s)
+	os.Exit(1)
 }

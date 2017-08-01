@@ -1,0 +1,22 @@
+# TemplateTest
+
+{{range .}}
+## {{.Name}}
+
+- Package: {{.Package}}
+
+### EnumTypes
+
+{{range .EnumType}}- {{.Name}}
+{{end}}
+
+## MessageTypes
+
+{{range .MessageType}}- {{.Name}}
+{{end}}
+
+## Services
+
+{{range .Service}}- {{.Name}}
+{{end}}
+{{end}}

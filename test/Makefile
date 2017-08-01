@@ -32,42 +32,7 @@
 all:
 	@echo run make test
 
-include ../../Make.protobuf
+test:	gen
 
-test:	golden testbuild
-
-#test:	golden testbuild extension_test
-#	./extension_test
-#	@echo PASS
-
-my_test/test.pb.go: my_test/test.proto
-	protoc --go_out=Mmulti/multi1.proto=github.com/golang/protobuf/protoc-gen-go/testdata/multi:. $<
-
-golden:
-	make -B my_test/test.pb.go
-	sed -i -e '/return.*fileDescriptor/d' my_test/test.pb.go
-	sed -i -e '/^var fileDescriptor/,/^}/d' my_test/test.pb.go
-	sed -i -e '/proto.RegisterFile.*fileDescriptor/d' my_test/test.pb.go
-	gofmt -w my_test/test.pb.go
-	diff -w my_test/test.pb.go my_test/test.pb.go.golden
-
-nuke:	clean
-
-testbuild:	regenerate
-	go test
-
-regenerate:
-	# Invoke protoc once to generate three independent .pb.go files in the same package.
-	protoc --go_out=. multi/multi1.proto multi/multi2.proto multi/multi3.proto
-
-#extension_test:	extension_test.$O
-#	$(LD) -L. -o $@ $<
-
-#multi.a: multi3.pb.$O multi2.pb.$O multi1.pb.$O
-#	rm -f multi.a
-#	$(QUOTED_GOBIN)/gopack grc $@ $<
-
-#test.pb.go:	imp.pb.go
-#multi1.pb.go:	multi2.pb.go multi3.pb.go
-#main.$O: imp.pb.$O test.pb.$O multi.a
-#extension_test.$O: extension_base.pb.$O extension_extra.pb.$O extension_user.pb.$O
+gen:
+	protoc --gotemplate_out=templates/mytemplate.md.tmpl:output --plugin=protoc-gen-gotemplate=$(CURDIR)/../bin/protoc-gen-gotemplate test_1/test.proto multi/*.proto
