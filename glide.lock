@@ -1,6 +1,8 @@
-hash: 822a4e701d4ca819f42f1c29ec1336638d77ac086d400b3a301d1dd7d15772b0
-updated: 2017-08-01T09:51:53.277134088+09:00
+hash: 46638e73015cc4960bb4b1e863e9ce3531398749167146a59aa45494ee5274e9
+updated: 2017-08-02T02:27:58.432279798+09:00
 imports:
+- name: github.com/aokoli/goutils
+  version: 3391d3790d23d03408670993e957e8f408993c34
 - name: github.com/golang/protobuf
   version: 748d386b5c1ea99658fd69fe9f03991ce86a90c1
   subpackages:
@@ -8,4 +10,23 @@ imports:
   - protoc-gen-go/descriptor
   - protoc-gen-go/generator
   - protoc-gen-go/plugin
+- name: github.com/huandu/xstrings
+  version: 3959339b333561bf62a38b424fd41517c2c90f40
+- name: github.com/imdario/mergo
+  version: 3e95a51e0639b4cf372f2ccf74c86749d747fbdc
+- name: github.com/Masterminds/semver
+  version: 59c29afe1a994eacb71c833025ca7acf874bb1da
+- name: github.com/Masterminds/sprig
+  version: e039e20e500c2c025d9145be375e27cf42a94174
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+- name: github.com/yuemori/protoc-gen-gotemplate
+  version: 8ecc951af61913628aa919abc564a1b9cac5b5e2
+  subpackages:
+  - generator
+- name: golang.org/x/crypto
+  version: 558b6879de74bc843225cde5686419267ff707ca
+  subpackages:
+  - pbkdf2
+  - scrypt
 testImports: []

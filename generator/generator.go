@@ -2,6 +2,7 @@ package generator
 
 import (
 	"bytes"
+	"github.com/Masterminds/sprig"
 	"github.com/golang/protobuf/protoc-gen-go/descriptor"
 	plugin "github.com/golang/protobuf/protoc-gen-go/plugin"
 	"log"
@@ -57,7 +58,7 @@ func String(v string) *string {
 func (g *Generator) execTemplate(files []*descriptor.FileDescriptorProto) {
 	for _, path := range g.templatePaths {
 		tpl := template.Must(template.ParseFiles(path))
-		if err := tpl.Execute(g.Buffer, files); err != nil {
+		if err := tpl.Funcs(sprig.FuncMap()).Execute(g.Buffer, files); err != nil {
 			g.Error(err)
 		}
 

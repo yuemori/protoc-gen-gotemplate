@@ -4,3 +4,4 @@ import:
   subpackages:
   - proto
   - protoc-gen-go/generator
+- package: github.com/Masterminds/sprig
